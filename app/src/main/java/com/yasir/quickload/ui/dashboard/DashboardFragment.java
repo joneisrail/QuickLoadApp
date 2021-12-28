@@ -5,41 +5,28 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.arch.lifecycle.Observer;
-import android.arch.lifecycle.ViewModelProvider;
+
+
+import androidx.lifecycle.ViewModelProvider;
 
 import com.yasir.quickload.R;
+import com.yasir.quickload.base.BaseFragment;
 import com.yasir.quickload.databinding.FragmentDashboardBinding;
 
-public class DashboardFragment extends Fragment {
+public class DashboardFragment extends BaseFragment {
 
     private DashboardViewModel dashboardViewModel;
     private FragmentDashboardBinding binding;
 
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             ViewGroup container, Bundle savedInstanceState) {
-        dashboardViewModel =
-                new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory()).get(DashboardViewModel.class);
-
-        binding = FragmentDashboardBinding.inflate(inflater, container, false);
-        View root = binding.getRoot();
-
-        final TextView textView = binding.textDashboard;
-        dashboardViewModel.getText().observe(getViewLifecycleOwner(), new Observer<String>() {
-            @Override
-            public void onChanged(@Nullable String s) {
-                textView.setText(s);
-            }
-        });
-        return root;
+    @Override
+    public int setLayoutId() {
+        return R.layout.fragment_home;
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    public void startUI() {
+
     }
+
+
 }

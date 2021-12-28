@@ -1,19 +1,16 @@
 package com.yasir.quickload.ui.home;
 
-import android.arch.lifecycle.LiveData;
-import android.arch.lifecycle.MutableLiveData;
-import android.arch.lifecycle.ViewModel;
 
-public class HomeViewModel extends ViewModel {
 
-    private MutableLiveData<String> mText;
+import android.app.Application;
 
-    public HomeViewModel() {
-        mText = new MutableLiveData<>();
-        mText.setValue("This is home fragment");
-    }
+import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
 
-    public LiveData<String> getText() {
-        return mText;
+public class HomeViewModel extends AndroidViewModel {
+
+
+    public HomeViewModel(@NonNull Application application) {
+        super(application);
     }
 }

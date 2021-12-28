@@ -1,35 +1,38 @@
 package com.yasir.quickload.ui.settings;
 
-import android.arch.lifecycle.Observer;
-import android.arch.lifecycle.ViewModelProvider;
+
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.databinding.ViewDataBinding;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+
+import com.yasir.quickload.R;
+import com.yasir.quickload.base.BaseFragment;
 import com.yasir.quickload.databinding.FragmentDashboardBinding;
 import com.yasir.quickload.databinding.FragmentSettingsBinding;
 
-public class SettingsFragment extends Fragment {
+public class SettingsFragment extends BaseFragment {
 
     private SettingsViewModel settingsViewModel;
-    private FragmentSettingsBinding binding;
+    private ViewDataBinding binding;
 
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             ViewGroup container, Bundle savedInstanceState) {
-        settingsViewModel =
-                new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory()).get(SettingsViewModel.class);
-
-        binding = FragmentSettingsBinding.inflate(inflater, container, false);
-        View root = binding.getRoot();
-
-
-        return root;
+    @Override
+    public int setLayoutId() {
+        return R.layout.fragment_settings;
     }
+
+    @Override
+    public void startUI() {
+        binding = getViewDataBinding();
+    }
+
 
     @Override
     public void onDestroyView() {
