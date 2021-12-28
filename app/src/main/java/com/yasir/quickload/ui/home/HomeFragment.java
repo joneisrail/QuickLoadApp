@@ -3,11 +3,13 @@ package com.yasir.quickload.ui.home;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.IBinder;
 
@@ -18,7 +20,9 @@ import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 import androidx.annotation.NonNull;
@@ -41,8 +45,21 @@ import java.util.List;
 
 public class HomeFragment extends BaseFragment implements ServiceConnection, SerialListener {
 
+    private BluetoothAdapter bluetoothAdapter;
 
-    private enum Connected { False, Pending, True }
+    private enum Connected {False, Pending, True}
+
+    private interface OperatiorSelector {
+        int GRAMEEN_PHONE = 1;
+        int ROBI = 2;
+        int BANGLALINK = 3;
+    }
+
+    private interface OperatiorPin {
+        int GRAMEEN_PHONE = 123;
+        int ROBI = 222;
+        int BANGLALINK = 233;
+    }
     private String deviceAddress;
     private SerialService service;
 
@@ -57,12 +74,11 @@ public class HomeFragment extends BaseFragment implements ServiceConnection, Ser
     private String newline = TextUtil.newline_crlf;
 
 
-
     private FragmentHomeBinding binding;
     AlertDialog.Builder builder;
-    String operator="";
-    String mob="";
-    String number="";
+    int operator = 1;
+    String mob = "";
+    String number = "";
 
 
     @Override
@@ -75,44 +91,66 @@ public class HomeFragment extends BaseFragment implements ServiceConnection, Ser
 
 
         binding = (FragmentHomeBinding) getViewDataBinding();
-
+        if (getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH))
+            bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        sendText = binding.textSend;
+        receiveText = binding.textReceive;
         builder = new AlertDialog.Builder(getActivity());
-        builder.setPositiveButton("Yes",(dialog, which) -> {
-
+        builder.setPositiveButton("Yes", (dialog, which) -> {
+            String mobile = binding.txtMobile.getText().toString().trim();
+            String amount = binding.txtAmount.getText().toString().trim();
+            //TODO GENERATE PROPER DATA
+            getDataWithProvidedParam();
+            String data = "" + operator + ",AT+CUSD=1,\"*" + mobile + "#\",15\r\n";
+            send(data);
         });
-        builder.setNegativeButton("No",(dialog, which) -> {
+        builder.setNegativeButton("No", (dialog, which) -> {
 
         });
 
         binding.btnOkay.setOnClickListener(v -> {
             mob = binding.spOperator.getSelectedItem().toString();
-            number=binding.spOperator.getSelectedItem().toString();
+            number = binding.spOperator.getSelectedItem().toString();
 
-            builder.setMessage("Do you want recharge \n "+mob);
+            builder.setMessage("Do you want recharge \n " + mob);
             builder.setTitle("Confirmation");
             builder.show();
         });
-    }
 
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
-    }
-    /*
-     * Lifecycle
-     */
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
-        setRetainInstance(true);
-        //deviceAddress = getArguments().getString("device");
         deviceAddress = "00:20:12:08:8B:9E";
         List<String> strings = new ArrayList<>();
         strings.add(deviceAddress);
-        DialogUtil.showMessageDialog(getActivity(),"Pared Devices" , strings, new DialogUtil.DialogButtonClickListener() {
+
+        binding.textSend.setOnClickListener(v -> {
+            showPairedDevicesDialog();
+        });
+        binding.spOperator.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (parent.getSelectedItem().toString().equals("grameenphone")) {
+                    operator = OperatiorSelector.GRAMEEN_PHONE;
+                } else if (parent.getSelectedItem().toString().equals("robi")) {
+                    operator = OperatiorSelector.ROBI;
+                } else if (parent.getSelectedItem().toString().equals("banglalink")) {
+                    operator = OperatiorSelector.BANGLALINK;
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+    }
+
+    private String getDataWithProvidedParam() {
+        //TODO HANDLE LATER
+        return "";
+    }
+
+    private void showPairedDevicesDialog() {
+        DialogUtil.showMessageDialog(getActivity(), "Pared Devices", getPairedDevices(), new DialogUtil.DialogButtonClickListener() {
             @Override
             public void onNotNowButtonCLicked() {
 
@@ -122,7 +160,30 @@ public class HomeFragment extends BaseFragment implements ServiceConnection, Ser
             public void onConfirmButtonClicked() {
 
             }
+        }, (view, item) -> {
+            deviceAddress = "" + item;
+            connect();
+            //Toast.makeText(getActivity(), "item:"+item, Toast.LENGTH_SHORT).show();
         });
+    }
+
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
+    }
+
+    /*
+     * Lifecycle
+     */
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+        setRetainInstance(true);
+        //deviceAddress = getArguments().getString("device");
+
     }
 
     @Override
@@ -136,20 +197,24 @@ public class HomeFragment extends BaseFragment implements ServiceConnection, Ser
     @Override
     public void onStart() {
         super.onStart();
-        if(service != null)
+
+        if (service != null) {
             service.attach(this);
-        else
+        } else {
+            //   Toast.makeText(getActivity(), "Service Started!", Toast.LENGTH_SHORT).show();
             getActivity().startService(new Intent(getActivity(), SerialService.class)); // prevents service destroy on unbind from recreated activity caused by orientation change
+        }
     }
 
     @Override
     public void onStop() {
-        if(service != null && !getActivity().isChangingConfigurations())
+        if (service != null && !getActivity().isChangingConfigurations())
             service.detach();
         super.onStop();
     }
 
-    @SuppressWarnings("deprecation") // onAttach(context) was added with API 23. onAttach(activity) works for all API versions
+    @SuppressWarnings("deprecation")
+    // onAttach(context) was added with API 23. onAttach(activity) works for all API versions
     @Override
     public void onAttach(@NonNull Activity activity) {
         super.onAttach(activity);
@@ -158,14 +223,17 @@ public class HomeFragment extends BaseFragment implements ServiceConnection, Ser
 
     @Override
     public void onDetach() {
-        try { getActivity().unbindService(this); } catch(Exception ignored) {}
+        try {
+            getActivity().unbindService(this);
+        } catch (Exception ignored) {
+        }
         super.onDetach();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if(initialStart && service != null) {
+        if (initialStart && service != null) {
             initialStart = false;
             getActivity().runOnUiThread(this::connect);
         }
@@ -175,7 +243,7 @@ public class HomeFragment extends BaseFragment implements ServiceConnection, Ser
     public void onServiceConnected(ComponentName name, IBinder binder) {
         service = ((SerialService.SerialBinder) binder).getService();
         service.attach(this);
-        if(initialStart && isResumed()) {
+        if (initialStart && isResumed()) {
             initialStart = false;
             getActivity().runOnUiThread(this::connect);
         }
@@ -185,6 +253,7 @@ public class HomeFragment extends BaseFragment implements ServiceConnection, Ser
     public void onServiceDisconnected(ComponentName name) {
         service = null;
     }
+
     /*
      * SerialListener
      */
@@ -204,6 +273,7 @@ public class HomeFragment extends BaseFragment implements ServiceConnection, Ser
     public void onSerialRead(byte[] data) {
         receive(data);
     }
+
     /*
      * Serial + UI
      */
@@ -219,12 +289,49 @@ public class HomeFragment extends BaseFragment implements ServiceConnection, Ser
             onSerialConnectError(e);
         }
     }
+
+    private List<BluetoothDevice> getPairedDevices() {
+        List<BluetoothDevice> listItems = new ArrayList<>();
+        if (bluetoothAdapter != null) {
+            for (BluetoothDevice device : bluetoothAdapter.getBondedDevices())
+                listItems.add(device);
+        }
+        return listItems;
+    }
+
+    private void send(String str) {
+        if (connected != Connected.True) {
+            Toast.makeText(getActivity(), "not connected", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try {
+            String msg;
+            byte[] data;
+            if (hexEnabled) {
+                StringBuilder sb = new StringBuilder();
+                TextUtil.toHexString(sb, TextUtil.fromHexString(str));
+                TextUtil.toHexString(sb, newline.getBytes());
+                msg = sb.toString();
+                data = TextUtil.fromHexString(msg);
+            } else {
+                msg = str;
+                data = (str + newline).getBytes();
+            }
+            SpannableStringBuilder spn = new SpannableStringBuilder(msg + '\n');
+            spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorStatusText)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            receiveText.append(spn);
+            service.write(data);
+        } catch (Exception e) {
+            onSerialIoError(e);
+        }
+    }
+
     private void receive(byte[] data) {
-        if(hexEnabled) {
+        if (hexEnabled) {
             receiveText.append(TextUtil.toHexString(data) + '\n');
         } else {
             String msg = new String(data);
-            if(newline.equals(TextUtil.newline_crlf) && msg.length() > 0) {
+            if (newline.equals(TextUtil.newline_crlf) && msg.length() > 0) {
                 // don't show CR as ^M if directly before LF
                 msg = msg.replace(TextUtil.newline_crlf, TextUtil.newline_lf);
                 // special handling if CR and LF come in separate fragments
@@ -238,16 +345,19 @@ public class HomeFragment extends BaseFragment implements ServiceConnection, Ser
             receiveText.append(TextUtil.toCaretString(msg, newline.length() != 0));
         }
     }
+
     @Override
     public void onSerialIoError(Exception e) {
         status("connection lost: " + e.getMessage());
         disconnect();
     }
+
     private void status(String str) {
         SpannableStringBuilder spn = new SpannableStringBuilder(str + '\n');
         spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorStatusText)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         receiveText.append(spn);
     }
+
     private void disconnect() {
         connected = Connected.False;
         service.disconnect();

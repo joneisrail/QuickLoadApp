@@ -22,7 +22,7 @@ public final class TextUtil {
     public final static String newline_crlf = "\r\n";
     public final static String newline_lf = "\n";
 
-    static byte[] fromHexString(final CharSequence s) {
+    public static byte[] fromHexString(final CharSequence s) {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         byte b = 0;
         int nibble = 0;
@@ -52,7 +52,7 @@ public final class TextUtil {
         return sb.toString();
     }
 
-    static void toHexString(StringBuilder sb, final byte[] buf) {
+    public static void toHexString(StringBuilder sb, final byte[] buf) {
         toHexString(sb, buf, 0, buf.length);
     }
 

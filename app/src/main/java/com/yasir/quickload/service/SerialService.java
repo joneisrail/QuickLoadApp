@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.widget.Toast;
 
 
 import androidx.annotation.Nullable;
@@ -66,6 +67,13 @@ public class SerialService extends Service implements SerialListener {
         cancelNotification();
         disconnect();
         super.onDestroy();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        //Toast.makeText(getBaseContext(), "Started", Toast.LENGTH_SHORT).show();
+
+        return super.onStartCommand(intent, flags, startId);
     }
 
     @Nullable

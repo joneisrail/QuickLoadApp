@@ -1,5 +1,6 @@
 package com.yasir.quickload;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 
@@ -12,6 +13,7 @@ import androidx.navigation.ui.NavigationUI;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.yasir.quickload.base.BaseActivity;
 import com.yasir.quickload.databinding.ActivityMainBinding;
+import com.yasir.quickload.service.SerialService;
 
 public class MainActivity extends BaseActivity {
 
@@ -36,6 +38,7 @@ public class MainActivity extends BaseActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
         NavigationUI.setupWithNavController(binding.navView, navController);
+        startService(new Intent(getActivity(), SerialService.class));
     }
 
 

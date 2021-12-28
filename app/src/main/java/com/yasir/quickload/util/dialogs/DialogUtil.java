@@ -2,6 +2,7 @@ package com.yasir.quickload.util.dialogs;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.graphics.drawable.ColorDrawable;
 
@@ -14,13 +15,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.yasir.quickload.R;
+import com.yasir.quickload.base.ItemClickListener;
 
 import java.util.List;
 import java.util.Objects;
 
 public class DialogUtil {
     private static DialogAdapter dialogAdapter = new DialogAdapter();
-    public static void showMessageDialog(Context context, String title, List<String> body, DialogButtonClickListener dialogButtonClickListener) {
+    public static void showMessageDialog(Context context, String title, List<BluetoothDevice> body, DialogButtonClickListener dialogButtonClickListener, ItemClickListener itemClickListener) {
         LayoutInflater inflater = LayoutInflater.from(context);
 
 
@@ -31,9 +33,9 @@ public class DialogUtil {
         dialogAdapter.clear();
         contentRecyclerView.setAdapter(dialogAdapter);
         dialogAdapter.addItems(body);
+
         contentRecyclerView.setLayoutManager(new LinearLayoutManager(context));
         TextView notNowBtn = alertLayout.findViewById(R.id.btn_not_now);
-        TextView confirmBtn = alertLayout.findViewById(R.id.btn_confirm);
 
 
 
@@ -48,19 +50,20 @@ public class DialogUtil {
         Dialog alertPermissionDialog = alertPermissionBuilder.create();
         Objects.requireNonNull(alertPermissionDialog.getWindow()).setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
         alertPermissionDialog.show();
-
+        dialogAdapter.setItemClickListener((view, item) -> {
+            if(itemClickListener!=null)
+            {
+                itemClickListener.onItemClick(view,item);
+            }
+            alertPermissionDialog.dismiss();
+        });
         notNowBtn.setOnClickListener(v -> {
             alertPermissionDialog.dismiss();
             if (dialogButtonClickListener != null) {
                 dialogButtonClickListener.onNotNowButtonCLicked();
             }
         });
-        confirmBtn.setOnClickListener(v -> {
-            alertPermissionDialog.dismiss();
-            if (dialogButtonClickListener != null) {
-                dialogButtonClickListener.onConfirmButtonClicked();
-            }
-        });
+
     }
 
 
@@ -74,10 +77,8 @@ public class DialogUtil {
         TextView contentText = alertLayout.findViewById(R.id.rename_chan_ET);
 
         TextView notNowBtn = alertLayout.findViewById(R.id.btn_not_now);
-        TextView confirmBtn = alertLayout.findViewById(R.id.btn_confirm);
 
         notNowBtn.setText(textNotNow);
-        confirmBtn.setText(textConfirm);
 
 
         contentText.setText(body);
@@ -99,12 +100,7 @@ public class DialogUtil {
                 dialogButtonClickListener.onNotNowButtonCLicked();
             }
         });
-        confirmBtn.setOnClickListener(v -> {
-            alertPermissionDialog.dismiss();
-            if (dialogButtonClickListener != null) {
-                dialogButtonClickListener.onConfirmButtonClicked();
-            }
-        });
+
         return alertPermissionDialog;
     }
 

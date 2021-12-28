@@ -6,7 +6,7 @@
     <string name="title_settings">Settings</string>
     <string name="paired_device">Paired Devices</string>
     <string name="btn_confirm">Confirm</string>
-    <string name="not_now">not now</string>
+    <string name="not_now">Cancel</string>
     <string-array name="operators">
         <item>GrameenPhone</item>
         <item>Robi</item>
